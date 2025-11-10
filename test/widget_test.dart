@@ -7,24 +7,36 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
 import 'package:tap_tap_tap/main.dart';
+import 'package:tap_tap_tap/screens/home_screen.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  group('TapTapTapApp', () {
+    testWidgets('construit un MaterialApp avec HomeScreen', (tester) async {
+      await tester.pumpWidget(const TapTapTapApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+      final materialAppFinder = find.byType(MaterialApp);
+      expect(materialAppFinder, findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+      final materialApp = tester.widget<MaterialApp>(materialAppFinder);
+      expect(materialApp.home, isA<HomeScreen>());
+    });
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    testWidgets('le HomeScreen partage la même instance de TapSettings', (tester) async {
+      await tester.pumpWidget(const TapTapTapApp());
+
+      final home = tester.widget<HomeScreen>(find.byType(HomeScreen));
+      final settings = home.tapSettings;
+
+      expect(settings.tapDuration, const Duration(minutes: 1));
+
+      settings.tapDuration = const Duration(seconds: 90);
+      await tester.pump();
+
+      // Le HomeScreen est reconstruit automatiquement puisque les tests
+      // manipulent le même objet.
+      final updatedHome = tester.widget<HomeScreen>(find.byType(HomeScreen));
+      expect(identical(settings, updatedHome.tapSettings), isTrue);
+    });
   });
 }
