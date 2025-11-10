@@ -130,6 +130,12 @@ class _PlayScreenState extends State<PlayScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final backgroundColor = _canTap
+        ? theme.colorScheme.primaryContainer
+        : theme.colorScheme.surfaceContainerHighest;
+    final textColor = _canTap
+        ? theme.colorScheme.onPrimaryContainer
+        : theme.colorScheme.onSurface;
 
     return Scaffold(
       appBar: AppBar(
@@ -147,7 +153,7 @@ class _PlayScreenState extends State<PlayScreen> {
                     onPressed: _isCountingDown ? null : _startCountdown,
                     child: const Text('Démarrer'),
                   ),
-                  if (_countdownValue != null)
+                  if (_countdownValue != null && _countdownValue! > 0)
                     Text(
                       '${_countdownValue!}',
                       style: theme.textTheme.headlineMedium,
@@ -161,20 +167,25 @@ class _PlayScreenState extends State<PlayScreen> {
               ),
             ),
             Expanded(
-              child: FilledButton(
-                onPressed: _canTap ? _incrementCounter : null,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(double.infinity, double.infinity),
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  foregroundColor: theme.colorScheme.onPrimaryContainer,
-                  padding: EdgeInsets.zero,
-                  shape: const RoundedRectangleBorder(),
-                  disabledBackgroundColor: theme.colorScheme.surfaceVariant,
-                  disabledForegroundColor: theme.colorScheme.onSurfaceVariant,
-                ),
-                child: Text(
-                  '$_tapCount',
-                  style: theme.textTheme.displayLarge,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _canTap ? _incrementCounter : null,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: backgroundColor,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '$_tapCount',
+                      style: theme.textTheme.displayLarge?.copyWith(
+                            color: textColor,
+                          ) ??
+                          TextStyle(
+                            fontSize: 96,
+                            color: textColor,
+                          ),
+                    ),
+                  ),
                 ),
               ),
             ),
