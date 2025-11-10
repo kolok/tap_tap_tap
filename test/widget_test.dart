@@ -8,12 +8,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tap_tap_tap/main.dart';
+import 'package:tap_tap_tap/models/tap_settings.dart';
 import 'package:tap_tap_tap/screens/home_screen.dart';
 
 void main() {
   group('TapTapTapApp', () {
     testWidgets('construit un MaterialApp avec HomeScreen', (tester) async {
-      await tester.pumpWidget(const TapTapTapApp());
+      final tapSettings = TapSettings();
+
+      await tester.pumpWidget(TapTapTapApp(tapSettings: tapSettings));
 
       final materialAppFinder = find.byType(MaterialApp);
       expect(materialAppFinder, findsOneWidget);
@@ -23,7 +26,9 @@ void main() {
     });
 
     testWidgets('le HomeScreen partage la même instance de TapSettings', (tester) async {
-      await tester.pumpWidget(const TapTapTapApp());
+      final tapSettings = TapSettings();
+
+      await tester.pumpWidget(TapTapTapApp(tapSettings: tapSettings));
 
       final home = tester.widget<HomeScreen>(find.byType(HomeScreen));
       final settings = home.tapSettings;

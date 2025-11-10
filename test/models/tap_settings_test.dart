@@ -1,8 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tap_tap_tap/models/tap_settings.dart';
 
 void main() {
   group('TapSettings', () {
+    setUp(() async {
+      TestWidgetsFlutterBinding.ensureInitialized();
+      SharedPreferences.setMockInitialValues({});
+    });
+
     test('expose la durée initiale par défaut', () {
       final settings = TapSettings();
 
@@ -45,6 +51,26 @@ void main() {
         () => settings.tapDuration = const Duration(seconds: -5),
         throwsAssertionError,
       );
+    });
+
+    test('persiste la durée choisie', () async {
+      final settings = TapSettings();
+
+      settings.tapDuration = const Duration(seconds: 45);
+      await pumpEventQueue();
+
+      final preferences = await SharedPreferences.getInstance();
+      expect(preferences.getInt('tap_duration_seconds'), 45);
+    });
+
+    test('charge la durée persistée', () async {
+      SharedPreferences.setMockInitialValues({
+        'tap_duration_seconds': 120,
+      });
+
+      final settings = await TapSettings.load();
+
+      expect(settings.tapDuration, const Duration(minutes: 2));
     });
   });
 }

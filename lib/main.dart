@@ -3,19 +3,20 @@ import 'package:flutter/material.dart';
 import 'models/tap_settings.dart';
 import 'screens/home_screen.dart';
 
-void main() {
-  runApp(const TapTapTapApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final tapSettings = await TapSettings.load();
+
+  runApp(TapTapTapApp(tapSettings: tapSettings));
 }
 
-class TapTapTapApp extends StatefulWidget {
-  const TapTapTapApp({super.key});
+class TapTapTapApp extends StatelessWidget {
+  const TapTapTapApp({
+    super.key,
+    required this.tapSettings,
+  });
 
-  @override
-  State<TapTapTapApp> createState() => _TapTapTapAppState();
-}
-
-class _TapTapTapAppState extends State<TapTapTapApp> {
-  final TapSettings _tapSettings = TapSettings();
+  final TapSettings tapSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +26,7 @@ class _TapTapTapAppState extends State<TapTapTapApp> {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: HomeScreen(tapSettings: _tapSettings),
+      home: HomeScreen(tapSettings: tapSettings),
     );
   }
 }
