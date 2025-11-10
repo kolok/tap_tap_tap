@@ -16,16 +16,7 @@ void main() {
       );
     }
 
-    Finder _playAreaFinder() {
-      return find.byType(GestureDetector).last;
-    }
-
-    Finder _counterFinder() {
-      return find.descendant(
-        of: _playAreaFinder(),
-        matching: find.byType(Text),
-      );
-    }
+    Finder _playAreaFinder() => find.byKey(const ValueKey('play-area'));
 
     testWidgets('démarre un compte à rebours avant la partie', (tester) async {
       final tapSettings = TapSettings(tapDuration: const Duration(seconds: 5));
@@ -34,14 +25,27 @@ void main() {
 
       await tester.tap(find.text('Démarrer'));
       await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-      expect(find.text('3'), findsOneWidget);
+      Text countdownText =
+          tester.widget<Text>(find.byKey(const ValueKey('countdown')));
+      expect(countdownText.data, '3');
 
       await tester.pump(const Duration(seconds: 1));
-      expect(find.text('2'), findsOneWidget);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      countdownText =
+          tester.widget<Text>(find.byKey(const ValueKey('countdown')));
+      expect(countdownText.data, '2');
 
       await tester.pump(const Duration(seconds: 1));
-      expect(find.text('1'), findsOneWidget);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      countdownText =
+          tester.widget<Text>(find.byKey(const ValueKey('countdown')));
+      expect(countdownText.data, '1');
     });
 
     testWidgets('incrémente le compteur pendant la partie', (tester) async {
@@ -50,14 +54,20 @@ void main() {
       await _pumpPlayScreen(tester, tapSettings: tapSettings);
 
       await tester.tap(find.text('Démarrer'));
-      await tester.pump(); // affiche 3
-      await tester.pump(const Duration(seconds: 3)); // compte à rebours jusqu’à 0
-      await tester.pump(const Duration(seconds: 1)); // cache l’affichage 0
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.byKey(const ValueKey('game-stats')), findsOneWidget);
 
       await tester.tap(_playAreaFinder());
       await tester.pump();
 
-      final counterText = tester.widget<Text>(_counterFinder());
+      final counterText =
+          tester.widget<Text>(find.byKey(const ValueKey('tap-counter')));
       expect(counterText.data, '1');
     });
 
@@ -67,21 +77,32 @@ void main() {
       await _pumpPlayScreen(tester, tapSettings: tapSettings);
 
       await tester.tap(find.text('Démarrer'));
-      await tester.pump(); // 3
-      await tester.pump(const Duration(seconds: 3)); // fin du compte à rebours
-      await tester.pump(const Duration(seconds: 1)); // suppression du 0
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
       await tester.tap(_playAreaFinder());
       await tester.pump();
 
-      await tester.pump(const Duration(seconds: 3)); // laisse le timer de jeu atteindre la fin
+      for (var i = 0; i < 2; i++) {
+        await tester.pump(const Duration(seconds: 1));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 300));
+      }
 
       await tester.tap(_playAreaFinder());
       await tester.pump();
 
-      final counterText = tester.widget<Text>(_counterFinder());
+      final counterText =
+          tester.widget<Text>(find.byKey(const ValueKey('tap-counter')));
       expect(counterText.data, '1');
-      expect(find.text('00:00'), findsOneWidget);
+      final remainingText =
+          tester.widget<Text>(find.byKey(const ValueKey('remaining-time')));
+      expect(remainingText.data, '00:00');
+      expect(find.text('Rejouer'), findsOneWidget);
     });
   });
 }

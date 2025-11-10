@@ -1,5 +1,5 @@
 name: tap_tap_tap
-description: "A new Flutter project."
+description: "Tap Tap Tap is a game where you have to tap the screen as fast as you can."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

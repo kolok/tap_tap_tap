@@ -17,6 +17,11 @@ class PlayScreen extends StatefulWidget {
 }
 
 class _PlayScreenState extends State<PlayScreen> {
+  static const Color _idleBackground = Color(0xFF1976D2);
+  static const Color _gameBackground = Color(0xFF1565C0);
+  static const Color _dangerBackground = Color(0xFFC62828);
+  static const Color _endBackground = Color(0xFF2E7D32);
+
   int _tapCount = 0;
   int? _countdownValue;
   bool _canTap = false;
@@ -26,7 +31,7 @@ class _PlayScreenState extends State<PlayScreen> {
   bool _gameOver = false;
   late Duration _gameDuration;
 
-  bool get _isCountingDown => _countdownTimer != null;
+  bool get _isCountingDown => _countdownValue != null;
   bool get _isGameRunning => _canTap && !_gameOver;
 
   String get _remainingLabel {
@@ -53,7 +58,7 @@ class _PlayScreenState extends State<PlayScreen> {
   }
 
   void _startCountdown() {
-    if (_isCountingDown) return;
+    if (_isCountingDown || _isGameRunning) return;
     _resetGameState();
 
     setState(() {
@@ -72,27 +77,19 @@ class _PlayScreenState extends State<PlayScreen> {
         return;
       }
 
-      if (_countdownValue! > 0) {
-        final nextValue = _countdownValue! - 1;
-        setState(() {
+      final nextValue = _countdownValue! - 1;
+      setState(() {
+        if (nextValue <= 0) {
+          _countdownValue = null;
+          _startGame();
+        } else {
           _countdownValue = nextValue;
-          if (nextValue == 0) {
-            _startGame();
-          }
-        });
-
-        if (nextValue == 0) {
-          timer.cancel();
-          _countdownTimer = null;
-          Future.delayed(const Duration(seconds: 1), () {
-            if (!mounted) return;
-            if (_countdownValue == 0) {
-              setState(() {
-                _countdownValue = null;
-              });
-            }
-          });
         }
+      });
+
+      if (nextValue <= 0) {
+        timer.cancel();
+        _countdownTimer = null;
       }
     });
   }
@@ -150,70 +147,49 @@ class _PlayScreenState extends State<PlayScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final backgroundColor = _canTap
-        ? theme.colorScheme.primaryContainer
-        : theme.colorScheme.surfaceContainerHighest;
-    final textColor = _canTap
-        ? theme.colorScheme.onPrimaryContainer
-        : theme.colorScheme.onSurface;
+    final backgroundColor = _computeBackgroundColor();
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Jouer'),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  ElevatedButton(
-                    onPressed: _isCountingDown ? null : _startCountdown,
-                    child: const Text('Démarrer'),
-                  ),
-              Text(
-                _durationLabel(_gameDuration),
-                style: theme.textTheme.bodyLarge,
-              ),
-                  if (_countdownValue != null && _countdownValue! > 0)
-                    Text(
-                      '${_countdownValue!}',
-                      style: theme.textTheme.headlineMedium,
-                    ),
-                  if (_elapsed > Duration.zero || _isGameRunning)
-                    Text(
-                      _remainingLabel,
-                      style: theme.textTheme.titleLarge,
-                    ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: _canTap ? _incrementCounter : null,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                  ),
-                  child: Center(
-                    child: Text(
-                      '$_tapCount',
-                      style: theme.textTheme.displayLarge?.copyWith(
-                            color: textColor,
-                          ) ??
-                          TextStyle(
-                            fontSize: 96,
-                            color: textColor,
-                          ),
-                    ),
+        child: GestureDetector(
+          key: const ValueKey('play-area'),
+          behavior: HitTestBehavior.opaque,
+          onTap: _canTap ? _incrementCounter : null,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            color: backgroundColor,
+            child: Stack(
+              children: [
+                Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: _buildCentralContent(theme),
                   ),
                 ),
-              ),
+                if (_gameOver)
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: FilledButton(
+                        onPressed: _startCountdown,
+                        child: const Text('Rejouer'),
+                      ),
+                    ),
+                  ),
+                if (!_isCountingDown && !_isGameRunning && !_gameOver)
+                  Center(
+                    child: FilledButton(
+                      onPressed: _startCountdown,
+                      child: const Text('Démarrer'),
+                    ),
+                  ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -233,17 +209,75 @@ class _PlayScreenState extends State<PlayScreen> {
     });
   }
 
-  String _durationLabel(Duration duration) {
-    final minutes = duration.inMinutes;
-    final seconds = duration.inSeconds % 60;
-    if (minutes > 0) {
-      final minutePart = minutes > 1 ? '$minutes minutes' : '$minutes minute';
-      if (seconds == 0) {
-        return minutePart;
-      }
-      return '$minutePart ${seconds.toString().padLeft(2, '0')} s';
+  Widget _buildCentralContent(ThemeData theme) {
+    final textTheme = theme.textTheme;
+
+    if (_isCountingDown && _countdownValue != null) {
+      return Text(
+        '${_countdownValue!}',
+        key: const ValueKey('countdown'),
+        style: textTheme.displayLarge?.copyWith(color: Colors.white) ??
+            const TextStyle(
+              fontSize: 96,
+              color: Colors.white,
+            ),
+      );
     }
-    return '${duration.inSeconds} s';
+
+    if (_isGameRunning || _gameOver) {
+      return Column(
+        key: const ValueKey('game-stats'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '$_tapCount',
+            key: const ValueKey('tap-counter'),
+            style: textTheme.displayLarge?.copyWith(color: Colors.white) ??
+                const TextStyle(
+                  fontSize: 96,
+                  color: Colors.white,
+                ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            _remainingLabel,
+            key: const ValueKey('remaining-time'),
+            style: textTheme.headlineMedium?.copyWith(color: Colors.white70) ??
+                const TextStyle(
+                  fontSize: 32,
+                  color: Colors.white70,
+                ),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox(
+      key: ValueKey('idle'),
+    );
+  }
+
+  Color _computeBackgroundColor() {
+    if (_gameOver) {
+      return _endBackground;
+    }
+
+    if (_isGameRunning) {
+      final remaining = _gameDuration - _elapsed;
+      if (remaining <= Duration.zero) {
+        return _endBackground;
+      }
+
+      if (remaining <= const Duration(seconds: 3)) {
+        final ratio =
+            1 - (remaining.inMilliseconds.clamp(0, 3000) / 3000.0);
+        return Color.lerp(_gameBackground, _dangerBackground, ratio)!;
+      }
+
+      return _gameBackground;
+    }
+
+    return _idleBackground;
   }
 }
 
