@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../models/tap_settings.dart';
 import 'play_screen.dart';
 import 'settings_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({
+    super.key,
+    required this.tapSettings,
+  });
+
+  final TapSettings tapSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +26,7 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const PlayScreen(),
+                    builder: (context) => PlayScreen(tapSettings: tapSettings),
                   ),
                 );
               },
@@ -31,7 +37,8 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => const SettingsScreen(),
+                    builder: (context) =>
+                        SettingsScreen(tapSettings: tapSettings),
                   ),
                 );
               },
