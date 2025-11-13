@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../components/game_button.dart';
+import '../components/player_zone.dart';
 import '../models/tap_settings.dart';
 
 class PlayScreenTwoPlayer extends StatefulWidget {
@@ -197,37 +199,14 @@ class _PlayScreenTwoPlayerState extends State<PlayScreenTwoPlayer> {
               ],
             ),
             // Boutons de contrôle au centre, au-dessus de tout
-            Center(
-              child: _gameOver
-                  ? Align(
-                      alignment: Alignment.centerLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 16),
-                        child: Transform.rotate(
-                          angle: 4.7124, // 270°
-                          child: FilledButton(
-                            onPressed: _startCountdown,
-                            child: const Text('Rejouer'),
-                          ),
-                        ),
-                      ),
-                    )
-                  : (!_isCountingDown && !_isGameRunning && !_gameOver)
-                      ? Align(
-                          alignment: Alignment.centerLeft,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 16),
-                            child: Transform.rotate(
-                              angle: 4.7124, // 270°
-                              child: FilledButton(
-                                onPressed: _startCountdown,
-                                child: const Text('Démarrer'),
-                              ),
-                            ),
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-            ),
+            if (!_isCountingDown && !_isGameRunning)
+              GameButton(
+                onPressed: _startCountdown,
+                label: _gameOver ? 'Rejouer' : 'Démarrer',
+                angle: 4.7124, // 270°
+                alignment: Alignment.centerLeft,
+                padding: const EdgeInsets.only(left: 16),
+              ),
           ],
         ),
       ),
@@ -243,85 +222,21 @@ class _PlayScreenTwoPlayerState extends State<PlayScreenTwoPlayer> {
     required Color backgroundColor,
   }) {
     final computedBackground = _computeBackgroundColor(backgroundColor);
+    final rotationAngle = playerNumber == 1 ? 3.14159 : 0.0; // 180° pour joueur 1, 0° pour joueur 2
 
-    return GestureDetector(
-      key: ValueKey('play-area-player-$playerNumber'),
-      behavior: HitTestBehavior.opaque,
-      onTap: _canTap ? onTap : null,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        color: computedBackground,
-        child: Stack(
-          children: [
-            // Contenu central
-            Center(
-              child: Transform.rotate(
-                angle: playerNumber == 1 ? 3.14159 : 0.0, // 180° pour joueur 1, 0° pour joueur 2
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Label joueur
-                    Text(
-                      'Joueur $playerNumber',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        color: Colors.white.withOpacity(0.8),
-                      ) ??
-                          TextStyle(
-                            fontSize: 20,
-                            color: Colors.white.withOpacity(0.8),
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    // Compteur de taps
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 250),
-                      child: _isCountingDown && _countdownValue != null
-                          ? Text(
-                              '${_countdownValue!}',
-                              key: ValueKey('countdown-player-$playerNumber'),
-                              style: theme.textTheme.displayLarge
-                                      ?.copyWith(color: Colors.white) ??
-                                  const TextStyle(
-                                    fontSize: 72,
-                                    color: Colors.white,
-                                  ),
-                            )
-                          : (_isGameRunning || _gameOver)
-                              ? Text(
-                                  '$tapCount',
-                                  key: ValueKey('tap-counter-player-$playerNumber'),
-                                  style: theme.textTheme.displayLarge
-                                          ?.copyWith(color: Colors.white) ??
-                                      const TextStyle(
-                                        fontSize: 72,
-                                        color: Colors.white,
-                                      ),
-                                )
-                              : SizedBox(
-                                  key: ValueKey('idle-player-$playerNumber'),
-                                ),
-                    ),
-                    // Timer (affiché une seule fois au centre si nécessaire)
-                    if (_isGameRunning || _gameOver)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          _remainingLabel,
-                          style: theme.textTheme.headlineSmall
-                                  ?.copyWith(color: Colors.white70) ??
-                              const TextStyle(
-                                fontSize: 24,
-                                color: Colors.white70,
-                              ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return PlayerZone(
+      theme: theme,
+      playerNumber: playerNumber,
+      tapCount: tapCount,
+      onTap: onTap,
+      backgroundColor: computedBackground,
+      isCountingDown: _isCountingDown,
+      countdownValue: _countdownValue,
+      isGameRunning: _isGameRunning,
+      isGameOver: _gameOver,
+      remainingLabel: _remainingLabel,
+      canTap: _canTap,
+      rotationAngle: rotationAngle,
     );
   }
 

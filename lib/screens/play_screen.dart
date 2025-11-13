@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../components/game_button.dart';
+import '../components/game_content.dart';
 import '../models/tap_settings.dart';
 
 class PlayScreen extends StatefulWidget {
@@ -166,25 +168,46 @@ class _PlayScreenState extends State<PlayScreen> {
                 Center(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 250),
-                    child: _buildCentralContent(theme),
+                    child: _gameOver
+                        ? Column(
+                            key: ValueKey('game-over-content'),
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GameContent(
+                                key: ValueKey('game-content-$_tapCount'),
+                                theme: theme,
+                                isCountingDown: _isCountingDown,
+                                countdownValue: _countdownValue,
+                                isGameRunning: _isGameRunning,
+                                isGameOver: _gameOver,
+                                tapCount: _tapCount,
+                                remainingLabel: _remainingLabel,
+                              ),
+                              const SizedBox(height: 32),
+                              GameButton(
+                                onPressed: _startCountdown,
+                                label: 'Rejouer',
+                              ),
+                            ],
+                          )
+                        : GameContent(
+                            key: ValueKey('game-content-${_isCountingDown ? _countdownValue : _tapCount}'),
+                            theme: theme,
+                            isCountingDown: _isCountingDown,
+                            countdownValue: _countdownValue,
+                            isGameRunning: _isGameRunning,
+                            isGameOver: _gameOver,
+                            tapCount: _tapCount,
+                            remainingLabel: _remainingLabel,
+                          ),
                   ),
                 ),
-                if (_gameOver)
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: FilledButton(
-                        onPressed: _startCountdown,
-                        child: const Text('Rejouer'),
-                      ),
-                    ),
-                  ),
                 if (!_isCountingDown && !_isGameRunning && !_gameOver)
-                  Center(
-                    child: FilledButton(
+                  Align(
+                    alignment: Alignment.center,
+                    child: GameButton(
                       onPressed: _startCountdown,
-                      child: const Text('Démarrer'),
+                      label: 'Démarrer',
                     ),
                   ),
               ],
@@ -209,53 +232,6 @@ class _PlayScreenState extends State<PlayScreen> {
     });
   }
 
-  Widget _buildCentralContent(ThemeData theme) {
-    final textTheme = theme.textTheme;
-
-    if (_isCountingDown && _countdownValue != null) {
-      return Text(
-        '${_countdownValue!}',
-        key: const ValueKey('countdown'),
-        style: textTheme.displayLarge?.copyWith(color: Colors.white) ??
-            const TextStyle(
-              fontSize: 96,
-              color: Colors.white,
-            ),
-      );
-    }
-
-    if (_isGameRunning || _gameOver) {
-      return Column(
-        key: const ValueKey('game-stats'),
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            '$_tapCount',
-            key: const ValueKey('tap-counter'),
-            style: textTheme.displayLarge?.copyWith(color: Colors.white) ??
-                const TextStyle(
-                  fontSize: 96,
-                  color: Colors.white,
-                ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            _remainingLabel,
-            key: const ValueKey('remaining-time'),
-            style: textTheme.headlineMedium?.copyWith(color: Colors.white70) ??
-                const TextStyle(
-                  fontSize: 32,
-                  color: Colors.white70,
-                ),
-          ),
-        ],
-      );
-    }
-
-    return const SizedBox(
-      key: ValueKey('idle'),
-    );
-  }
 
   Color _computeBackgroundColor() {
     if (_gameOver) {
