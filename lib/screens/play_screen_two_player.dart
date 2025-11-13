@@ -21,9 +21,11 @@ class PlayScreenTwoPlayer extends StatefulWidget {
 class _PlayScreenTwoPlayerState extends State<PlayScreenTwoPlayer> {
   static const Color _idleBackground = Color(0xFF1976D2);
   static const Color _dangerBackground = Color(0xFFC62828);
-  static const Color _endBackground = Color(0xFF2E7D32);
   static const Color _player1Background = Color(0xFF1565C0);
   static const Color _player2Background = Color(0xFF00695C);
+  static const Color _winnerBackground = Color(0xFF2E7D32); // Vert pour le gagnant
+  static const Color _loserBackground = Color(0xFFC62828); // Rouge pour le perdant
+  static const Color _tieBackground = Color(0xFF1976D2); // Bleu pour l'égalité
 
   int _tapCountPlayer1 = 0;
   int _tapCountPlayer2 = 0;
@@ -221,7 +223,7 @@ class _PlayScreenTwoPlayerState extends State<PlayScreenTwoPlayer> {
     required VoidCallback onTap,
     required Color backgroundColor,
   }) {
-    final computedBackground = _computeBackgroundColor(backgroundColor);
+    final computedBackground = _computeBackgroundColor(backgroundColor, playerNumber);
     final rotationAngle = playerNumber == 1 ? 3.14159 : 0.0; // 180° pour joueur 1, 0° pour joueur 2
 
     return PlayerZone(
@@ -254,15 +256,32 @@ class _PlayScreenTwoPlayerState extends State<PlayScreenTwoPlayer> {
     });
   }
 
-  Color _computeBackgroundColor(Color baseColor) {
+  Color _computeBackgroundColor(Color baseColor, int playerNumber) {
     if (_gameOver) {
-      return _endBackground;
+      // Comparer les scores pour déterminer la couleur
+      if (_tapCountPlayer1 > _tapCountPlayer2) {
+        // Joueur 1 gagne
+        return playerNumber == 1 ? _winnerBackground : _loserBackground;
+      } else if (_tapCountPlayer2 > _tapCountPlayer1) {
+        // Joueur 2 gagne
+        return playerNumber == 2 ? _winnerBackground : _loserBackground;
+      } else {
+        // Égalité
+        return _tieBackground;
+      }
     }
 
     if (_isGameRunning) {
       final remaining = _gameDuration - _elapsed;
       if (remaining <= Duration.zero) {
-        return _endBackground;
+        // Le jeu vient de se terminer, utiliser la logique de fin de jeu
+        if (_tapCountPlayer1 > _tapCountPlayer2) {
+          return playerNumber == 1 ? _winnerBackground : _loserBackground;
+        } else if (_tapCountPlayer2 > _tapCountPlayer1) {
+          return playerNumber == 2 ? _winnerBackground : _loserBackground;
+        } else {
+          return _tieBackground;
+        }
       }
 
       if (remaining <= const Duration(seconds: 3)) {
